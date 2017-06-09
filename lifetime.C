@@ -12,6 +12,7 @@ void lifetime(){
 	gROOT->Reset();	//this clears any objects from a previous run of this script
 
 	TChain hits("T");	//define the TChain (using the tree 'T' in the file)
+	hits.Add("May30MagOn.root");
 	hits.Add("May17MagOn.root");
 
 	//variables
@@ -30,15 +31,32 @@ void lifetime(){
 
 	//loop over all data in chain
 	Int_t nevent = hits.GetEntries();	//get the number of entries in the TChain
+	
+	Int_t endTime = 0;
+	Int_t startTime = 0;
+	Int_t totalDataTime = 0;
+
 	for (Int_t i=0;i<nevent;i++) {
 		hits.GetEntry(i); 
+		
+		if(eventNum == 1){
+			totalDataTime += endTime-startTime;
+			startTime = UNIXtime;
+		}
+		else{
+			endTime = UNIXtime;
+		}
+
 		if(tdc[0]>0){		//see if this is an 'up' decay
 			upHits->Fill(tdc[0]/1000);	//convert to micro-seconds from ns
 		}
 		else if(tdc[1]>0){
 			downHits->Fill(tdc[1]/1000);
 		}
+
 	}
+
+	totalDataTime += endTime-startTime;
 
 	TCanvas * Clife = new TCanvas("Clife","Up and Down Lifetime",0,0,800,400);
 	Clife->Divide(2,1);
@@ -63,7 +81,7 @@ void lifetime(){
 	myfunUp->SetParLimits(0,10,1e5); 
 	myfunUp->SetParLimits(2,0,5);
 
-	upHits->Fit(myfunUp,"","",1,20);
+	upHits->Fit(myfunUp,"","",0.75,20);
 
 	Clife->cd(2);
 
@@ -86,7 +104,7 @@ void lifetime(){
 	myfunDown->SetParLimits(0,10,1e5);
 	myfunDown->SetParLimits(2,0,10);
 
-	downHits->Fit(myfunDown,"","",0,20);
+	downHits->Fit(myfunDown,"","",1.3,20);
 
 	double slopeUp = myfunUp->GetParameter(1);
 	double slopeErrUp = myfunUp->GetParError(1);
