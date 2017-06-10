@@ -12,8 +12,11 @@ void lifetime(){
 	gROOT->Reset();	//this clears any objects from a previous run of this script
 
 	TChain hits("T");	//define the TChain (using the tree 'T' in the file)
-	hits.Add("May30MagOn.root");
+	//hits.Add("May30MagOn.root");
 	hits.Add("May17MagOn.root");
+
+	TChain bg("T");
+	bg.Add("May30MagOn.root");
 
 	//variables
 	int eventNum=0;
@@ -21,9 +24,9 @@ void lifetime(){
 	float tdc[2]={-10,-10};
 
 	//add 'branches' to the tree
-	T->SetBranchAddress("eventNum",&eventNum);	//branch for the event number
-	T->SetBranchAddress("UNIXtime",&UNIXtime);	//branch for the time
-	T->SetBranchAddress("tdc",&tdc);				//branch for the tdc values (in ns)
+	hits.SetBranchAddress("eventNum",&eventNum);	//branch for the event number
+    hits.SetBranchAddress("UNIXtime",&UNIXtime);	//branch for the time
+	hits.SetBranchAddress("tdc",&tdc);			//branch for the tdc values (in ns)
 
 	//histograms
 	TH1D *upHits = new TH1D("upHits","Upward Decays",200,0,20);
@@ -38,7 +41,6 @@ void lifetime(){
 
 	for (Int_t i=0;i<nevent;i++) {
 		hits.GetEntry(i); 
-		
 		if(eventNum == 1){
 			totalDataTime += endTime-startTime;
 			startTime = UNIXtime;
@@ -53,10 +55,28 @@ void lifetime(){
 		else if(tdc[1]>0){
 			downHits->Fill(tdc[1]/1000);
 		}
-
 	}
 
 	totalDataTime += endTime-startTime;
+	cout<<"The total data run time is "<<totalDataTime << " s."<<endl;
+
+	//subtracting the background data
+	int eventNum_bg=0;
+	int UNIXtime_bg=0;
+	float tdc_bg[2]={-10,-10};
+
+	Int_t nevent_bg = bg.GetEntries();
+
+	bg.SetBranchAddress("eventNum",&eventNum_bg);	//branch for the event number
+    bg.SetBranchAddress("UNIXtime",&UNIXtime_bg);	//branch for the time
+	bg.SetBranchAddress("tdc",&tdc_bg);			//branch for the tdc values (in ns)
+	
+	bg.GetEntry(0);
+	Int_t startTime_bg = UNIXtime_bg;
+	bg.GetEntry(nevent_bg-1);
+	Int_t endTime_bg = UNIXtime_bg;
+	Int_t totalBgTime = endTime_bg - startTime_bg;
+	cout<< "The total background run time is "<< totalBgTime << " s."<<endl;
 
 	TCanvas * Clife = new TCanvas("Clife","Up and Down Lifetime",0,0,800,400);
 	Clife->Divide(2,1);
