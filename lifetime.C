@@ -78,6 +78,8 @@ void lifetime(){
 	Int_t totalBgTime = endTime_bg - startTime_bg;
 	cout<< "The total background run time is "<< totalBgTime << " s."<<endl;
 
+	float scale = (float)totalDataTime/ (float)totalBgTime;
+
 	TCanvas * Clife = new TCanvas("Clife","Up and Down Lifetime",0,0,800,400);
 	Clife->Divide(2,1);
 	Clife->cd(1);
