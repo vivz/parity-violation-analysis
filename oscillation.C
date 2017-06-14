@@ -8,7 +8,7 @@ using namespace std;
 #include "TAxis.h"
 
 
-void new_lifetime(){
+void oscillation(){
 	gROOT->Reset();	//this clears any objects from a previous run of this script
 
 	TChain hits("T");	//define the TChain (using the tree 'T' in the file)

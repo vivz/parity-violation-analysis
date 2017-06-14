@@ -8,12 +8,15 @@ using namespace std;
 #include "TAxis.h"
 
 
-void lifetime(){
+void lifetime_bg(){
 	gROOT->Reset();	//this clears any objects from a previous run of this script
 
 	TChain hits("T");	//define the TChain (using the tree 'T' in the file)
 	hits.Add("May30MagOn.root");
 	hits.Add("May17MagOn.root");
+
+	TChain bg("T");
+	bg.Add("May30MagOn.root");
 
 	//variables
 	int eventNum=0;
@@ -54,6 +57,41 @@ void lifetime(){
 		}
 	}
 
+	totalDataTime += endTime-startTime;
+	cout<<"The total data run time is "<<totalDataTime << " s."<<endl;
+
+	//subtracting the background data
+	int eventNum_bg=0;
+	int UNIXtime_bg=0;
+	float tdc_bg[2]={-10,-10};
+
+	Int_t nevent_bg = bg.GetEntries();
+
+	bg.SetBranchAddress("eventNum",&eventNum_bg);	//branch for the event number
+    bg.SetBranchAddress("UNIXtime",&UNIXtime_bg);	//branch for the time
+	bg.SetBranchAddress("tdc",&tdc_bg);			//branch for the tdc values (in ns)
+	
+	bg.GetEntry(0);
+	Int_t startTime_bg = UNIXtime_bg;
+	bg.GetEntry(nevent_bg-1);
+	Int_t endTime_bg = UNIXtime_bg;
+	Int_t totalBgTime = endTime_bg - startTime_bg;
+	cout<< "The total background run time is "<< totalBgTime << " s."<<endl;
+
+	//scale is negative because we want to subtract it from the data;
+	// float scale = (-1) * (float)totalDataTime/ (float)totalBgTime;
+
+	// for (Int_t i=0;i<nevent_bg;i++) {
+	// 	bg.GetEntry(i); 
+	// 	if(tdc[0]>0){		
+	// 		upHits->Fill(tdc[0]/1000, scale);
+	// 	}
+	// 	else if(tdc[1]>0){
+	// 		downHits->Fill(tdc[1]/1000, scale);
+	// 	}
+	// }
+
+
 	//exopnential fit function
 	TF1 *myfunUp = new TF1("myfunUp","[0]*exp([1]*x)+[2]+[3]*exp(x/(-0.16))");
 	myfunUp->SetParLimits(0,10,1e5); 
@@ -72,7 +110,8 @@ void lifetime(){
 	Clife->Divide(2,1);
 	Clife->cd(1);
 
-	upHits->SetTitle("Up Event TDC Distribution");
+	upHits->SetTitle("Up Decays");
+	//gPad->SetLogy();
 	upHits->GetXaxis()->SetTitle("Decay Time (#mu s)");
 	upHits->GetXaxis()->SetTitleSize(0.055);
 	upHits->GetXaxis()->SetTitleOffset(0.9);
@@ -83,12 +122,12 @@ void lifetime(){
 	upHits->GetYaxis()->SetTitleOffset(0.9);
 	upHits->GetYaxis()->SetLabelSize(0.055);
 	upHits->GetYaxis()->CenterTitle();
-	gStyle->SetOptFit(1);
 	upHits->Draw();
 
 	Clife->cd(2);
 
-	downHits->SetTitle("Down Event TDC Distribution");
+	downHits->SetTitle("Down Decays");
+	//gPad->SetLogy();
 	downHits->GetXaxis()->SetTitle("Decay Time (#mu s)");
 	downHits->GetXaxis()->SetTitleSize(0.055);
 	downHits->GetXaxis()->SetTitleOffset(0.9);
