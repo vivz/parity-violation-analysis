@@ -16,7 +16,7 @@ void lifetime_bg(){
 	hits.Add("May17MagOn.root");
 
 	TChain bg("T");
-	bg.Add("May30MagOn.root");
+	bg.Add("NoTargetJune6.root");
 
 	//variables
 	int eventNum=0;
@@ -29,8 +29,8 @@ void lifetime_bg(){
 	hits.SetBranchAddress("tdc",&tdc);			//branch for the tdc values (in ns)
 
 	//histograms
-	TH1D *upHits = new TH1D("upHits","Upward Decays",100,0,10);
-	TH1D *downHits = new TH1D("downHits","Downward Decays",100,0,10);
+	TH1D *upHits = new TH1D("upHits","Upward Decays",25,0,5);
+	TH1D *downHits = new TH1D("downHits","Downward Decays",25,0,5);
 
 	//loop over all data in chain
 	Int_t nevent = hits.GetEntries();	//get the number of entries in the TChain
@@ -48,7 +48,6 @@ void lifetime_bg(){
 		else{
 			endTime = UNIXtime;
 		}
-
 		if(tdc[0]>0){		//see if this is an 'up' decay
 			upHits->Fill(tdc[0]/1000);	//convert to micro-seconds from ns
 		}
@@ -79,39 +78,46 @@ void lifetime_bg(){
 	cout<< "The total background run time is "<< totalBgTime << " s."<<endl;
 
 	//scale is negative because we want to subtract it from the data;
-	// float scale = (-1) * (float)totalDataTime/ (float)totalBgTime;
+	float scale = (-1) * (float)totalDataTime/ (float)totalBgTime;
+	//scale = -1;
 
-	// for (Int_t i=0;i<nevent_bg;i++) {
-	// 	bg.GetEntry(i); 
-	// 	if(tdc[0]>0){		
-	// 		upHits->Fill(tdc[0]/1000, scale);
-	// 	}
-	// 	else if(tdc[1]>0){
-	// 		downHits->Fill(tdc[1]/1000, scale);
-	// 	}
-	// }
-
+	for (Int_t i=0;i<nevent_bg;i++) {
+		bg.GetEntry(i); 
+		if(tdc_bg[0]>0){
+			//int bin_num = upHits->FindBin(tdc_bg[0]/1000);
+			//cout << upHits->GetBinContent(bin_num) << endl;
+			//auto new_value = upHits->FindBin(tdc_bg[0]/1000)-scale
+			upHits->Fill(tdc_bg[0]/1000, scale);
+			//cout << upHits->GetBinContent(bin_num) << endl;
+			//cout<<endl;
+		}
+		else if(tdc_bg[1]>0){
+			downHits->Fill(tdc_bg[1]/1000, scale);
+		}
+	}
 
 	//exopnential fit function
 	TF1 *myfunUp = new TF1("myfunUp","[0]*exp([1]*x)+[2]+[3]*exp(x/(-0.16))");
 	myfunUp->SetParLimits(0,10,1e5); 
-	myfunUp->SetParLimits(2,0,5);
+	myfunUp->SetParLimits(2,0,50);
+	myfunDown->SetParLimits(3,5,1e5);
 
-	upHits->Fit(myfunUp,"","",0.75,10);
+	upHits->Fit(myfunUp,"","",0,5);
 
 	TF1 *myfunDown = new TF1("myfunDown","[0]*exp([1]*x)+[2]+[3]*exp(x/(-0.16))");
 	myfunDown->SetParLimits(0,10,1e5);
-	myfunDown->SetParLimits(2,0,10);
+	myfunDown->SetParLimits(2,0,100);
+	myfunDown->SetParLimits(3,0,1e5);
 
-	downHits->Fit(myfunDown,"","",1,10);
+	downHits->Fit(myfunDown,"L","",0,5);
 
 	//draw
 	TCanvas * Clife = new TCanvas("Clife","Up and Down Lifetime",0,0,800,400);
 	Clife->Divide(2,1);
 	Clife->cd(1);
 
-	upHits->SetTitle("Up Decays");
-	//gPad->SetLogy();
+	upHits->SetTitle("Up Decays (Background Subtracted)");
+	gPad->SetLogy();
 	upHits->GetXaxis()->SetTitle("Decay Time (#mu s)");
 	upHits->GetXaxis()->SetTitleSize(0.055);
 	upHits->GetXaxis()->SetTitleOffset(0.9);
@@ -126,8 +132,8 @@ void lifetime_bg(){
 
 	Clife->cd(2);
 
-	downHits->SetTitle("Down Decays");
-	//gPad->SetLogy();
+	downHits->SetTitle("Down Decays (Background Subtracted)");
+	gPad->SetLogy();
 	downHits->GetXaxis()->SetTitle("Decay Time (#mu s)");
 	downHits->GetXaxis()->SetTitleSize(0.055);
 	downHits->GetXaxis()->SetTitleOffset(0.9);

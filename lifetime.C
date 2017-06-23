@@ -26,8 +26,8 @@ void lifetime(){
 	hits.SetBranchAddress("tdc",&tdc);			//branch for the tdc values (in ns)
 
 	//histograms
-	TH1D *upHits = new TH1D("upHits","Upward Decays",100,0,10);
-	TH1D *downHits = new TH1D("downHits","Downward Decays",100,0,10);
+	TH1D *upHits = new TH1D("upHits","Upward Decays",50,0,5);
+	TH1D *downHits = new TH1D("downHits","Downward Decays",50,0,5);
 
 	//loop over all data in chain
 	Int_t nevent = hits.GetEntries();	//get the number of entries in the TChain
@@ -58,14 +58,16 @@ void lifetime(){
 	TF1 *myfunUp = new TF1("myfunUp","[0]*exp([1]*x)+[2]+[3]*exp(x/(-0.16))");
 	myfunUp->SetParLimits(0,10,1e5); 
 	myfunUp->SetParLimits(2,0,5);
+	myfunUp->SetParLimits(3,10,1e5);
 
-	upHits->Fit(myfunUp,"","",0.75,10);
+	upHits->Fit(myfunUp,"","",0,5);
 
 	TF1 *myfunDown = new TF1("myfunDown","[0]*exp([1]*x)+[2]+[3]*exp(x/(-0.16))");
 	myfunDown->SetParLimits(0,10,1e5);
-	myfunDown->SetParLimits(2,0,10);
+	myfunDown->SetParLimits(2,0,100);
+	myfunDown->SetParLimits(3,0,1e5);
 
-	downHits->Fit(myfunDown,"","",1,10);
+	downHits->Fit(myfunDown,"","",0,5);
 
 	//draw
 	TCanvas * Clife = new TCanvas("Clife","Up and Down Lifetime",0,0,800,400);
@@ -78,7 +80,7 @@ void lifetime(){
 	upHits->GetXaxis()->SetTitleOffset(0.9);
 	upHits->GetXaxis()->SetLabelSize(0.055);
 	upHits->GetXaxis()->CenterTitle();
-	upHits->GetYaxis()->SetTitle("Logged Event Count");
+	upHits->GetYaxis()->SetTitle("Event Count");
 	upHits->GetYaxis()->SetTitleSize(0.055);
 	upHits->GetYaxis()->SetTitleOffset(0.9);
 	upHits->GetYaxis()->SetLabelSize(0.055);
@@ -94,7 +96,7 @@ void lifetime(){
 	downHits->GetXaxis()->SetTitleOffset(0.9);
 	downHits->GetXaxis()->SetLabelSize(0.055);
 	downHits->GetXaxis()->CenterTitle();
-	downHits->GetYaxis()->SetTitle("Logged Event Count");
+	downHits->GetYaxis()->SetTitle("Event Count");
 	downHits->GetYaxis()->SetTitleSize(0.055);
 	downHits->GetYaxis()->SetTitleOffset(0.9);
 	downHits->GetYaxis()->SetLabelSize(0.055);
